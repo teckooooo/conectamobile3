@@ -19,6 +19,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ValueEventListener;
 
 import org.eclipse.paho.client.mqttv3.*;
 
@@ -50,6 +51,7 @@ public class Chat extends AppCompatActivity {
         messageEditText = findViewById(R.id.messageInput);
         messagesRecyclerView = findViewById(R.id.messagesRecyclerView);
         Button publishButton = findViewById(R.id.sendButton);
+        loadMessagesFromDatabase();
 
         // Recupera los datos del Intent
         String contactId = getIntent().getStringExtra("contactId");
@@ -82,23 +84,22 @@ public class Chat extends AppCompatActivity {
 
                     // Verifica si el usuario está autenticado
                     if (currentUser != null) {
-                        String currentUserId = currentUser.getUid();  // ID del usuario autenticado
-                        String senderName = currentUser.getDisplayName();  // Nombre del usuario actual
+                        String currentUserId = currentUser.getUid(); // ID del usuario autenticado
+                        String senderName = currentUser.getDisplayName(); // Nombre del usuario actual
 
                         if (senderName == null) {
-                            senderName = "Nombre no disponible";  // Si el nombre no está disponible
+                            senderName = "Nombre no disponible"; // Si el nombre no está disponible
                         }
 
-                        // Asumimos que 'receiver' es el ID del destinatario en la base de datos
-                        String receiverId = "david";  // Este es el ID del destinatario, obtenido del payload
+                        // Asumimos que el topic contiene el ID del receptor
+                        String receiverId = topic;
 
                         // Consulta para obtener el nombre del destinatario desde la base de datos
                         String finalSenderName = senderName;
-                        String finalSenderName1 = senderName;
                         FirebaseDatabase.getInstance().getReference("users")
                                 .child(receiverId)
                                 .get().addOnCompleteListener(task -> {
-                                    if (task.isSuccessful()) {
+                                    if (task.isSuccessful() && task.getResult().exists()) {
                                         // Obtén el nombre del destinatario
                                         String receiverName = task.getResult().child("name").getValue(String.class);
 
@@ -106,27 +107,39 @@ public class Chat extends AppCompatActivity {
                                             receiverName = "Destinatario no disponible"; // Si no existe el nombre
                                         }
 
-                                        // Crear un objeto Message con los datos correctos
-                                        Message msg = new Message(currentUserId, finalSenderName, receiverName, receivedMessage, System.currentTimeMillis());
+                                        // Solo añadir el mensaje si todos los datos son válidos
+                                        Message msg = new Message(
+                                                currentUserId,
+                                                finalSenderName,
+                                                receiverName,
+                                                receivedMessage,
+                                                System.currentTimeMillis()
+                                        );
 
                                         // Agregar el nuevo mensaje a la lista
                                         messageList.add(msg);
-                                        System.out.println(finalSenderName1);
-                                        System.out.println(receiverName);
+
+                                        // Mostrar los datos en la consola para depuración
+                                        System.out.println("Sender ID: " + currentUserId);
+                                        System.out.println("Sender Name: " + finalSenderName);
+                                        System.out.println("Receiver ID: " + receiverId);
+                                        System.out.println("Receiver Name: " + receiverName);
+                                        System.out.println("Received Message: " + receivedMessage);
+                                        System.out.println("Timestamp: " + System.currentTimeMillis());
+
                                         // Notificar al adaptador que la lista ha cambiado para actualizar la UI
                                         messagesAdapter.notifyDataSetChanged();
                                     } else {
-                                        Toast.makeText(Chat.this, "Error al obtener el nombre del destinatario", Toast.LENGTH_SHORT).show();
+                                        // Manejar errores si no se puede obtener el nombre del destinatario
+                                        Toast.makeText(Chat.this, "No se pudo obtener los datos del destinatario", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     } else {
-                        // Si el usuario no está autenticado, puedes manejar este caso (mostrar mensaje de error, etc.)
+                        // Manejar el caso cuando el usuario no está autenticado
                         Toast.makeText(Chat.this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
-
-
 
 
 
@@ -147,6 +160,52 @@ public class Chat extends AppCompatActivity {
         // Cargar el historial de mensajes desde Firebase
         loadChatHistory(contactId);
     }
+
+    public void loadMessagesFromDatabase() {
+        DatabaseReference messagesRef = FirebaseDatabase.getInstance().getReference("messages");
+
+        // Obtener todos los mensajes de la base de datos
+        messagesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // Limpiar la lista de mensajes antes de agregar los nuevos
+                messageList.clear();
+
+                // Iterar sobre todos los mensajes en la base de datos
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    // Obtener los datos del mensaje
+                    String senderId = snapshot.child("sender").getValue(String.class);
+                    String receiverId = snapshot.child("receiver").getValue(String.class);
+                    String senderName = snapshot.child("senderName").getValue(String.class);
+                    String messageContent = snapshot.child("message").getValue(String.class);
+                    long timestamp = snapshot.child("timestamp").getValue(Long.class);
+
+                    // Mostrar los datos obtenidos con println
+                    System.out.println("Sender ID: " + senderId);
+                    System.out.println("Receiver ID: " + receiverId);
+                    System.out.println("Sender Name: " + senderName);
+                    System.out.println("Message: " + messageContent);
+                    System.out.println("Timestamp: " + timestamp);
+
+                    // Crear un objeto Message con los datos obtenidos
+                    Message msg = new Message(senderId, senderName, receiverId, messageContent, timestamp);
+
+                    // Agregar el mensaje a la lista
+                    messageList.add(msg);
+                }
+
+                // Notificar al adaptador que los datos han cambiado
+                messagesAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Manejo de errores si la consulta falla
+                Toast.makeText(Chat.this, "Error al cargar los mensajes", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 
 
 
