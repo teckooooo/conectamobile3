@@ -14,13 +14,18 @@
         android:padding="16dp">
 
         <TextView
-            android:id="@+id/contacto_nombre"
+            android:id="@+id/textViewName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nombre Contacto"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textStyle="bold"
-            />
+            android:text="Nombre"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textViewEmail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Correo" />
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

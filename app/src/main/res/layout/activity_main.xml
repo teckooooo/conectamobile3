@@ -41,7 +41,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/contactos" />
+        tools:listitem="@layout/item_contact" />
 
     <!-- FloatingActionButton para el botón de "Más" -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
