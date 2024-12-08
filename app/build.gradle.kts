@@ -32,17 +32,31 @@ android {
     }
 }
 
-dependencies {
+// Aplicar el plugin de google-services
+apply(plugin = "com.google.gms.google-services")
 
+dependencies {
+    // Dependencias de AndroidX y Material
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+
+    // Firebase Auth
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
+
+    // Firebase Database
+    implementation("com.google.firebase:firebase-database:21.0.0")
+
+    // MQTT
+    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
+    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.1")
+
+    // LocalBroadcastManager
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
+    // Dependencias de Pruebas
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation (libs.org.eclipse.paho.client.mqttv3)
-    implementation (libs.org.eclipse.paho.android.service)
 }
