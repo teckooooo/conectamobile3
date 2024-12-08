@@ -118,7 +118,7 @@ public class Chat extends AppCompatActivity {
                                             receiverName = "Destinatario no disponible"; // Si no existe el nombre
                                         }
 
-                                        // Solo añadir el mensaje si todos los datos son válidos
+                                        // Crear el objeto Message
                                         Message msg = new Message(
                                                 currentUserId,
                                                 finalSenderName,
@@ -127,19 +127,14 @@ public class Chat extends AppCompatActivity {
                                                 System.currentTimeMillis()
                                         );
 
-                                        // Agregar el nuevo mensaje a la lista
-                                        messageList.add(msg);
+                                        // Verifica que el mensaje pertenezca al chat actual
+                                        if (isMessageForCurrentChat(currentUserId, receiverId)) {
+                                            // Agregar el nuevo mensaje a la lista si corresponde al chat actual
+                                            messageList.add(msg);
 
-                                        // Mostrar los datos en la consola para depuración
-                                        System.out.println("Sender ID: " + currentUserId);
-                                        System.out.println("Sender Name: " + finalSenderName);
-                                        System.out.println("Receiver ID: " + receiverId);
-                                        System.out.println("Receiver Name: " + receiverName);
-                                        System.out.println("Received Message: " + receivedMessage);
-                                        System.out.println("Timestamp: " + System.currentTimeMillis());
-
-                                        // Notificar al adaptador que la lista ha cambiado para actualizar la UI
-                                        messagesAdapter.notifyDataSetChanged();
+                                            // Notificar al adaptador que la lista ha cambiado para actualizar la UI
+                                            messagesAdapter.notifyDataSetChanged();
+                                        }
                                     } else {
                                         // Manejar errores si no se puede obtener el nombre del destinatario
                                         Toast.makeText(Chat.this, "No se pudo obtener los datos del destinatario", Toast.LENGTH_SHORT).show();
@@ -150,6 +145,8 @@ public class Chat extends AppCompatActivity {
                         Toast.makeText(Chat.this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+                // Cargar el historial de chat (si corresponde)
                 loadChatHistory(contactId);
                 subscribiendoTopico(topic);
             }
@@ -193,12 +190,6 @@ public class Chat extends AppCompatActivity {
                     String messageContent = snapshot.child("message").getValue(String.class);
                     long timestamp = snapshot.child("timestamp").getValue(Long.class);
 
-                    // Mostrar los datos obtenidos con println
-                    System.out.println("Sender ID: " + senderId);
-                    System.out.println("Receiver ID: " + receiverId);
-                    System.out.println("Sender Name: " + senderName);
-                    System.out.println("Message: " + messageContent);
-                    System.out.println("Timestamp: " + timestamp);
 
                     // Crear un objeto Message con los datos obtenidos
                     Message msg = new Message(senderId, senderName, receiverId, messageContent, timestamp);
@@ -220,15 +211,24 @@ public class Chat extends AppCompatActivity {
     }
 
 
-
+    // Método para verificar si el mensaje es para el chat actual
+    private boolean isMessageForCurrentChat(String senderId, String receiverId) {
+        // Verifica si el mensaje es para el chat actual basado en los IDs de remitente y receptor
+        String contactId = getIntent().getStringExtra("contactId");
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        return (senderId.equals(currentUserId) && receiverId.equals(contactId)) ||
+                (receiverId.equals(currentUserId) && senderId.equals(contactId));
+    }
 
     private void loadChatHistory(String contactId) {
         messagesRef = FirebaseDatabase.getInstance().getReference("messages");
 
-        // Consulta los mensajes del chat específico entre el usuario actual y el contacto
+        // Obtener el ID del usuario actual
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Consulta los mensajes del chat específico
         messagesRef.orderByChild("sender_receiver")
-                .equalTo(currentUserId + "_" + contactId)  // Asumiendo que creaste una combinación sender_receiver
+                .equalTo(currentUserId + "_" + contactId)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -237,11 +237,11 @@ public class Chat extends AppCompatActivity {
                         for (DataSnapshot messageSnapshot : snapshot.getChildren()) {
                             Message message = messageSnapshot.getValue(Message.class);
                             if (message != null) {
-                                messageList.add(message);  // Agregar el nuevo mensaje a la lista
+                                messageList.add(message);
                             }
                         }
 
-                        // Notifica al adaptador que la lista ha cambiado para actualizar la vista
+                        // Notifica al adaptador que la lista ha cambiado
                         messagesAdapter.notifyDataSetChanged();
                     }
 
@@ -251,6 +251,8 @@ public class Chat extends AppCompatActivity {
                     }
                 });
     }
+
+
 
 
 
@@ -274,12 +276,13 @@ public class Chat extends AppCompatActivity {
             // Obtener información del remitente y destinatario
             String sender = FirebaseAuth.getInstance().getCurrentUser().getUid(); // ID del usuario actual
             String senderName = FirebaseAuth.getInstance().getCurrentUser().getDisplayName(); // Nombre del usuario actual
-            String receiver = getIntent().getStringExtra("contactName"); // El destinatario
+            String receiver = getIntent().getStringExtra("contactId"); // ID del destinatario
             long timestamp = System.currentTimeMillis();
 
-            // Crear un objeto Message y guardarlo en Firebase
+            // Crear un objeto Message con los nuevos campos
             Message messageObject = new Message(sender, senderName, receiver, message, timestamp);
 
+            // Guardar el mensaje en Firebase
             messagesRef.push().setValue(messageObject)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(this, "Mensaje guardado en Firebase.", Toast.LENGTH_SHORT).show();
@@ -291,6 +294,7 @@ public class Chat extends AppCompatActivity {
             Toast.makeText(this, "No estás conectado a MQTT", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     private void subscribiendoTopico(String topic) {
         mqttService.subscribe(topic);
