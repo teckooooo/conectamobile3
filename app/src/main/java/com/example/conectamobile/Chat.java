@@ -24,6 +24,7 @@ import com.google.firebase.database.ValueEventListener;
 import org.eclipse.paho.client.mqttv3.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Chat extends AppCompatActivity {
@@ -37,8 +38,8 @@ public class Chat extends AppCompatActivity {
     private List<Message> messageList;
     private Handler mainHandler;
     private DatabaseReference messagesRef;
-
-    private static final String TOPIC = "chat/messages";
+    private static String topic = "";
+   // private static final String TOPIC = "chat/messages";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,16 @@ public class Chat extends AppCompatActivity {
 
         messageList = new ArrayList<>();
         mqttService = new MqttServicio(BROKER_URL, FirebaseAuth.getInstance().getCurrentUser().getUid());
+        // Recupera el correo del usuario actual y del contacto
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserEmail = currentUser != null ? currentUser.getEmail() : "";
+        String contactEmail = getIntent().getStringExtra("contactEmail"); // Asegúrate de pasar esto por el Intent
+        // Genera el Topic
+        topic = generateTopic(currentUserEmail, contactEmail);
+        // Muestra el Topic para verificar
+        System.out.println("Generated Topic: " + topic);
+
+        //mqttService = new MqttServicio(BROKER_URL, FirebaseAuth.getInstance().getCurrentUser().getUid());
 
         messageEditText = findViewById(R.id.messageInput);
         messagesRecyclerView = findViewById(R.id.messagesRecyclerView);
@@ -139,6 +150,8 @@ public class Chat extends AppCompatActivity {
                         Toast.makeText(Chat.this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
                     }
                 });
+                loadChatHistory(contactId);
+                subscribiendoTopico(topic);
             }
 
 
@@ -154,7 +167,7 @@ public class Chat extends AppCompatActivity {
 
         publishButton.setOnClickListener(v -> {
             String message = messageEditText.getText().toString();
-            publicandoMensaje(TOPIC, message);
+            publicandoMensaje(topic, message);
         });
 
         // Cargar el historial de mensajes desde Firebase
@@ -216,7 +229,7 @@ public class Chat extends AppCompatActivity {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         messagesRef.orderByChild("sender_receiver")
                 .equalTo(currentUserId + "_" + contactId)  // Asumiendo que creaste una combinación sender_receiver
-                .addValueEventListener(new com.google.firebase.database.ValueEventListener() {
+                .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         messageList.clear(); // Limpia la lista antes de agregar los nuevos mensajes
@@ -245,7 +258,7 @@ public class Chat extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         mqttService.connect();
-        subscribiendoTopico(TOPIC);
+        subscribiendoTopico(topic);
     }
 
     @Override
@@ -282,4 +295,18 @@ public class Chat extends AppCompatActivity {
     private void subscribiendoTopico(String topic) {
         mqttService.subscribe(topic);
     }
+
+    private String generateTopic(String currentUserEmail, String contactEmail) {
+        // Extraer las partes antes del "@" y eliminar caracteres no alfanuméricos
+        String currentUserName = currentUserEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+        String contactUserName = contactEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+
+        // Ordenar los nombres alfabéticamente
+        String[] sortedNames = {currentUserName, contactUserName};
+        Arrays.sort(sortedNames);
+
+        // Construir el topic
+        return "chat/" + sortedNames[0] + "_" + sortedNames[1];
+    }
+
 }
