@@ -5,18 +5,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Filter;
+import android.widget.Filterable;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> {
+public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> implements Filterable {
 
-    private List<Contact> contactList;
+    private List<Contact> contactList; // Lista completa
+    private List<Contact> contactListFiltered; // Lista filtrada
 
     public ContactAdapter(List<Contact> contactList) {
         this.contactList = contactList;
+        this.contactListFiltered = new ArrayList<>(contactList); // Inicialmente, la lista filtrada es igual a la lista completa
     }
 
     @NonNull
@@ -28,7 +33,7 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
 
     @Override
     public void onBindViewHolder(@NonNull ContactViewHolder holder, int position) {
-        Contact contact = contactList.get(position);
+        Contact contact = contactListFiltered.get(position); // Usar la lista filtrada
         holder.nameTextView.setText(contact.getName());
         holder.emailTextView.setText(contact.getEmail());
 
@@ -41,11 +46,49 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactV
             holder.itemView.getContext().startActivity(intent);   // Inicia la actividad de chat
         });
     }
+    public void updateContactList(List<Contact> newContactList) {
+        contactList.clear();
+        contactList.addAll(newContactList);
+        contactListFiltered.clear();
+        contactListFiltered.addAll(newContactList); // Asegúrate de sincronizar ambas listas
+        notifyDataSetChanged();
+    }
 
 
     @Override
     public int getItemCount() {
-        return contactList.size();
+        return contactListFiltered.size(); // Cambiar para devolver el tamaño de la lista filtrada
+    }
+
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence constraint) {
+                List<Contact> filteredList = new ArrayList<>();
+                if (constraint == null || constraint.length() == 0) {
+                    // Si no hay texto para filtrar, mostrar todos los contactos
+                    filteredList.addAll(contactList);
+                } else {
+                    String filterPattern = constraint.toString().toLowerCase().trim();
+                    for (Contact contact : contactList) {
+                        if (contact.getName().toLowerCase().contains(filterPattern)) {
+                            filteredList.add(contact); // Agregar contactos que coincidan con el filtro
+                        }
+                    }
+                }
+                FilterResults results = new FilterResults();
+                results.values = filteredList;
+                return results;
+            }
+
+            @Override
+            protected void publishResults(CharSequence constraint, FilterResults results) {
+                contactListFiltered.clear();
+                contactListFiltered.addAll((List<Contact>) results.values);
+                notifyDataSetChanged(); // Actualizar la lista
+            }
+        };
     }
 
     public static class ContactViewHolder extends RecyclerView.ViewHolder {

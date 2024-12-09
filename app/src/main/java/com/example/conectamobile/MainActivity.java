@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.SearchView;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -73,19 +74,34 @@ public class MainActivity extends AppCompatActivity {
         contactsRef.addValueEventListener(new com.google.firebase.database.ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                contactList.clear();
+                List<Contact> updatedContacts = new ArrayList<>();
                 for (DataSnapshot contactSnapshot : snapshot.getChildren()) {
                     Contact contact = contactSnapshot.getValue(Contact.class);
                     if (contact != null) {
-                        contactList.add(contact);
+                        updatedContacts.add(contact);
                     }
                 }
-                contactAdapter.notifyDataSetChanged();
+                contactAdapter.updateContactList(updatedContacts); // Actualiza ambas listas en el adaptador
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(MainActivity.this, "Error al cargar contactos: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        SearchView searchView = findViewById(R.id.search_view_contacto);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                contactAdapter.getFilter().filter(query); // Filtrar cuando se envíe la consulta
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                contactAdapter.getFilter().filter(newText); // Filtrar mientras se escribe
+                return false;
             }
         });
     }
@@ -96,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

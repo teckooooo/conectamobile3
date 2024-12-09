@@ -47,13 +47,14 @@ dependencies {
 
     // Firebase Database
     implementation("com.google.firebase:firebase-database:21.0.0")
-
+    //implementation ("com.google.firebase:firebase-firestore:24.1.1")
     // MQTT
     implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.1")
 
     // LocalBroadcastManager
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation(libs.firebase.firestore)
 
     // Dependencias de Pruebas
     testImplementation(libs.junit)
