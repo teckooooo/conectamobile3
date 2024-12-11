@@ -119,7 +119,7 @@ public class ProfileDialogFragment extends DialogFragment {
             });
         }
     }
-
+    //Codificacion imagen a base 64
     private String encodeImage(Bitmap bitmap) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 50, byteArrayOutputStream);
