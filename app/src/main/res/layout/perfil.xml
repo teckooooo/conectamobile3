@@ -19,44 +19,32 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:src="@drawable/ic_default_profile" />
 
-    <!-- Botón para cambiar la foto -->
-    <Button
-        android:id="@+id/btnChangePhoto"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/profileImage"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:text="Cambiar foto"
-        android:backgroundTint="#95AEE9"
-        android:textColor="@color/black"
-        android:fontFamily="casual" />
 
     <!-- Campo para el nombre -->
+
+    <!-- Botón para guardar los cambios -->
+
     <EditText
         android:id="@+id/editTextName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:hint="Nombre"
         android:padding="12dp"
-        app:layout_constraintTop_toBottomOf="@id/btnChangePhoto"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/profileImage" />
 
-    <!-- Botón para guardar los cambios -->
     <Button
         android:id="@+id/btnSaveProfile"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/editTextName"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="28dp"
+        android:backgroundTint="@color/fondo"
         android:text="Guardar cambios"
-        android:backgroundTint="#95AEE9"
-        android:textColor="@color/black"
-        android:fontFamily="casual" />
+        android:textColor="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/editTextName" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

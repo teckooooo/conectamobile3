@@ -35,10 +35,11 @@ import java.io.InputStream;
 public class ProfileDialogFragment extends DialogFragment {
 
     private EditText editTextName;
-    private Button btnSaveProfile, btnChangePhoto;
+    private Button btnSaveProfile;
     private ImageView profileImage;
     private FirebaseUser currentUser;
     private ActivityResultLauncher<Intent> pickImageLauncher;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -47,7 +48,6 @@ public class ProfileDialogFragment extends DialogFragment {
         // Inicializar los componentes
         editTextName = view.findViewById(R.id.editTextName);
         btnSaveProfile = view.findViewById(R.id.btnSaveProfile);
-        btnChangePhoto = view.findViewById(R.id.btnChangePhoto);
         profileImage = view.findViewById(R.id.profileImage);
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -73,11 +73,10 @@ public class ProfileDialogFragment extends DialogFragment {
             });
         }
 
-        // Configurar listeners
-        btnChangePhoto.setOnClickListener(v -> openGallery());
+        // Cambiar el listener de btnChangePhoto al profileImage
+        profileImage.setOnClickListener(v -> openGallery());
         btnSaveProfile.setOnClickListener(v -> saveProfileChanges());
 
-        // Inicializar el lanzador de actividad
         pickImageLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -130,7 +129,6 @@ public class ProfileDialogFragment extends DialogFragment {
     public void onStart() {
         super.onStart();
         if (getDialog() != null && getDialog().getWindow() != null) {
-            // Ajustar el tamaño del cuadro de diálogo
             getDialog().getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
@@ -145,12 +143,11 @@ public class ProfileDialogFragment extends DialogFragment {
                 return;
             }
 
-            // Actualizar el nombre en Firebase Realtime Database
             DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.getUid());
             userRef.child("name").setValue(updatedName).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(getContext(), "Nombre actualizado con éxito", Toast.LENGTH_SHORT).show();
-                    dismiss(); // Cerrar el diálogo
+                    dismiss(); //
                 } else {
                     Toast.makeText(getContext(), "Error al actualizar el nombre", Toast.LENGTH_SHORT).show();
                 }
@@ -160,3 +157,4 @@ public class ProfileDialogFragment extends DialogFragment {
         }
     }
 }
+
